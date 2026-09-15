@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # --- Messaging backbone ---
   zookeeper:
@@ -73,7 +71,7 @@ services:
     container_name: iomt-db
     environment:
       POSTGRES_USER: medguard
-      POSTGRES_PASSWORD: medguard_dev
+      POSTGRES_PASSWORD: medguard_dev #TODO: swap this to .env
       POSTGRES_DB: medguard
     ports:
       - "5432:5432"
