@@ -36,6 +36,7 @@ class TelemetryCommon(BaseModel):
 
     message_id: str
     device_id: str
+    patient_id: str
     unit: str
     timestamp: datetime
     packet_size_bytes: int = Field(ge=0, le=65535)
