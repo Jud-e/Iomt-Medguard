@@ -14,6 +14,7 @@ GATEWAY_URL (default http://localhost:8000).
 """
 import argparse
 import csv
+import json
 import os
 import random
 import time
@@ -26,6 +27,7 @@ import requests
 GATEWAY_URL = os.getenv("GATEWAY_URL", "http://localhost:8000")
 GATEWAY_API_TOKEN = os.getenv("GATEWAY_API_TOKEN", "dev-shared-secret-change-me")
 GROUND_TRUTH_LOG = Path(__file__).parent / "ground_truth_log.csv"
+PATIENTS_PATH = Path(__file__).parent.parent / "data" / "patients.json"
 
 # A small fleet of simulated devices. `config` is each device's current
 # reported security posture — some start deliberately vulnerable so the
@@ -50,6 +52,20 @@ DEVICES = [
      "config": {"auto_lock_enabled": True, "default_credentials_changed": True,
                 "firmware_up_to_date": False, "tls_enabled": True}},
 ]
+
+
+def load_patient_map() -> dict:
+    """device_id -> patient_id, from data/patients.json (see Option 2 in the
+    project discussion: device readings now carry patient context so the
+    gateway can cross-check against actual prescriptions, not just ranges)."""
+    with open(PATIENTS_PATH) as f:
+        data = json.load(f)
+    return {p["assigned_device_id"]: p["patient_id"] for p in data["patients"]}
+
+
+PATIENT_BY_DEVICE = load_patient_map()
+for _device in DEVICES:
+    _device["patient_id"] = PATIENT_BY_DEVICE[_device["device_id"]]
 
 
 def normal_reading(device: dict) -> dict:
@@ -84,14 +100,18 @@ def anomalous_reading(device: dict):
     """
     Returns (metrics, attack_type, is_malformed).
 
-    - out_of_range_vital / traffic_flood: structurally valid but behaviorally
-      anomalous -> should PASS the gateway's schema check and flow to Kafka
-      for the ML model to catch downstream.
+    - out_of_range_vital / traffic_flood / prescription_mismatch: structurally
+      valid but behaviorally/clinically anomalous -> should PASS the
+      gateway's schema check and flow to Kafka (prescription_mismatch is
+      additionally caught by the gateway's prescription check specifically).
     - payload_tamper: injects an undeclared field -> should be REJECTED by
-      the gateway's extra="forbid" schema validation (422), demonstrating
-      the zero-trust layer actually doing its job.
+      the gateway's extra="forbid" schema validation (422).
     """
-    attack_type = random.choice(["out_of_range_vital", "traffic_flood", "payload_tamper"])
+    possible_attacks = ["out_of_range_vital", "traffic_flood", "payload_tamper"]
+    if device["device_type"] == "infusion_pump":
+        possible_attacks.append("prescription_mismatch")
+
+    attack_type = random.choice(possible_attacks)
     base = normal_reading(device)
     is_malformed = False
 
@@ -108,6 +128,11 @@ def anomalous_reading(device: dict):
     elif attack_type == "traffic_flood":
         base["request_rate_per_min"] = round(random.uniform(200, 1000), 1)
         base["packet_size_bytes"] = random.randint(4000, 20000)
+
+    elif attack_type == "prescription_mismatch":
+        # Structurally valid rate, but deliberately far from what this
+        # patient is actually prescribed (see gateway/prescription_checks.py)
+        base["infusion_rate_ml_per_hr"] = round(random.uniform(250, 400), 1)
 
     else:  # payload_tamper
         base["_tampered_field"] = "unexpected_field_injected"
@@ -126,6 +151,7 @@ def build_message(device: dict, is_anomaly: bool):
     payload = {
         "message_id": message_id,
         "device_id": device["device_id"],
+        "patient_id": device["patient_id"],
         "device_type": device["device_type"],
         "unit": device["unit"],
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -201,7 +227,7 @@ def main():
             vuln_note = f" | vuln={vuln}" if vuln else ""
             attack_note = ground_truth["attack_type"] or "-"
 
-            print(f"[{sent:>4}] {tag} | {outcome:<12} | {device['device_id']:<20} | {attack_note:<18}{vuln_note}")
+            print(f"[{sent:>4}] {tag} | {outcome:<12} | {device['device_id']:<20} | {attack_note:<20}{vuln_note}")
 
             time.sleep(1.0 / args.rate)
     except KeyboardInterrupt:

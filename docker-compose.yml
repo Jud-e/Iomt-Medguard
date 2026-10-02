@@ -59,6 +59,7 @@ services:
       GATEWAY_API_TOKEN: ${GATEWAY_API_TOKEN:-dev-shared-secret-change-me}
     volumes:
       - ./gateway:/app   # live code reload while developing
+      - ./data:/app/data:ro   # patient registry (read-only — gateway doesn't modify it)
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   # --- Postgres for storing device metadata / risk scores ---
