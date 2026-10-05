@@ -59,7 +59,7 @@ services:
       GATEWAY_API_TOKEN: ${GATEWAY_API_TOKEN:-dev-shared-secret-change-me}
     volumes:
       - ./gateway:/app   # live code reload while developing
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --ssl-keyfile=/app/key.pem --ssl-certfile=/app/cert.pem
 
   # --- Postgres for storing device metadata / risk scores ---
   db:

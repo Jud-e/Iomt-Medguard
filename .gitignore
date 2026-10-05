@@ -27,3 +27,7 @@ Thumbs.db
 /ml/models/*.pkl
 /ml/models/*.pt
 /ml/models/*.h5
+
+# Gateway (private key)
+gateway/key.pem
+gateway/cert.pem
