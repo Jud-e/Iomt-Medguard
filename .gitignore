@@ -23,6 +23,7 @@ Thumbs.db
 # patterns) so the download instructions survive even though the data doesn't.
 /ingestion/datasets/**/*.csv
 /ingestion/datasets/**/*.zip
+/ingestion/ground_truth_log.csv
 *.parquet
 
 # Model artifacts (large binary files - track separately if needed)
