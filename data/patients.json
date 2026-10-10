@@ -1,0 +1,40 @@
+{
+  "_note": "Hand-authored sample data matching the shape real Synthea output would produce (Patient + MedicationRequest resources), since Synthea itself hasn't been run yet. Once you run Synthea locally, regenerate this file from real FHIR bundles instead of hand-authored data.",
+  "patients": [
+    {
+      "patient_id": "P-1001",
+      "name": "Simulated Patient A",
+      "condition": "Post-operative pain management",
+      "assigned_device_id": "infusion-pump-001",
+      "prescribed_infusion_rate_ml_per_hr": 75
+    },
+    {
+      "patient_id": "P-1002",
+      "name": "Simulated Patient B",
+      "condition": "Sepsis fluid management",
+      "assigned_device_id": "infusion-pump-002",
+      "prescribed_infusion_rate_ml_per_hr": 120
+    },
+    {
+      "patient_id": "P-1003",
+      "name": "Simulated Patient C",
+      "condition": "Post-MI cardiac monitoring",
+      "assigned_device_id": "cardiac-monitor-001",
+      "prescribed_infusion_rate_ml_per_hr": null
+    },
+    {
+      "patient_id": "P-1004",
+      "name": "Simulated Patient D",
+      "condition": "Arrhythmia observation",
+      "assigned_device_id": "cardiac-monitor-002",
+      "prescribed_infusion_rate_ml_per_hr": null
+    },
+    {
+      "patient_id": "P-1005",
+      "name": "Simulated Patient E",
+      "condition": "Post-op recovery, low-flow oxygen",
+      "assigned_device_id": "pulse-ox-001",
+      "prescribed_infusion_rate_ml_per_hr": null
+    }
+  ]
+}

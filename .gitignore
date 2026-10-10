@@ -19,8 +19,10 @@ Thumbs.db
 .idea/
 
 # Data (datasets are large - don't commit them, document how to get them instead)
-/ingestion/datasets/
-*.csv
+# Note: README.md files inside datasets/ ARE committed (not caught by these
+# patterns) so the download instructions survive even though the data doesn't.
+/ingestion/datasets/**/*.csv
+/ingestion/datasets/**/*.zip
 *.parquet
 
 # Model artifacts (large binary files - track separately if needed)
