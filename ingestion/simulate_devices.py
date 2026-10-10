@@ -24,7 +24,7 @@ from pathlib import Path
 
 import requests
 
-GATEWAY_URL = os.getenv("GATEWAY_URL", "http://localhost:8000")
+GATEWAY_URL = os.getenv("GATEWAY_URL", "https://localhost:8000")
 GATEWAY_API_TOKEN = os.getenv("GATEWAY_API_TOKEN", "dev-shared-secret-change-me")
 GROUND_TRUTH_LOG = Path(__file__).parent / "ground_truth_log.csv"
 PATIENTS_PATH = Path(__file__).parent.parent / "data" / "patients.json"
