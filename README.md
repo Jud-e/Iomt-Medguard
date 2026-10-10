@@ -44,6 +44,75 @@ iomt-medguard/
    ```
    You should see `zookeeper`, `kafka`, `kafka-ui`, `gateway`, and `iomt-db` all `Up`.
 
+## TLS setup (one-time, per machine)
+
+The gateway serves HTTPS. The certificates are generated locally with mkcert and are never committed (`key.pem` and `cert.pem` are git-ignored), so **each person must generate their own**.
+
+### 1. Install mkcert (Windows, PowerShell)
+
+```powershell
+winget install FiloSottile.mkcert
+```
+
+Close and reopen your terminal afterwards.
+
+### 2. Create the local certificate authority
+
+Run once, in an **Administrator** PowerShell:
+
+```powershell
+mkcert -install
+```
+
+### 3. Generate the gateway certs
+
+From the project root:
+
+```powershell
+cd gateway
+mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1
+cd ..
+```
+
+The file names must be exactly `key.pem` and `cert.pem`. `docker-compose.yml` expects them at `/app/key.pem` and `/app/cert.pem`.
+
+### 4. Make Python trust the CA
+
+Python `requests` ignores the Windows trust store, so point it at mkcert's root CA.
+
+For the current terminal only:
+
+```powershell
+$env:REQUESTS_CA_BUNDLE = "$(mkcert -CAROOT)\rootCA.pem"
+```
+
+Or set it permanently (open a new terminal afterwards):
+
+```powershell
+setx REQUESTS_CA_BUNDLE "$(mkcert -CAROOT)\rootCA.pem"
+```
+
+### 5. Verify
+
+```powershell
+docker compose up --build
+curl.exe -I https://localhost:8000/docs
+python ingestion/simulate_devices.py --count 20
+```
+
+You should get `200 OK` from curl, and the simulator should post without `CONN-ERROR`.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Simulator prints `CONN-ERROR` | `REQUESTS_CA_BUNDLE` not set in this terminal | Re-run step 4 |
+| Browser or curl certificate warning | mkcert CA not installed | Run `mkcert -install` as Administrator |
+| Gateway logs show `FileNotFoundError` for a `.pem` file | Certs missing or misnamed | Re-run step 3 inside `gateway/` |
+| `mkcert` not recognized | Terminal opened before install | Reopen the terminal |
+
+> **Never commit `key.pem`, `cert.pem` or `rootCA-key.pem`.** If `git status` lists a `.pem` file, don't `git add` it.
+
 ## Verifying it's working
 
 - Gateway health check: open `http://localhost:8000/health` → should return
